@@ -9,7 +9,7 @@
 		<script src="bootstrap.min.js"></script>
 		<script type="text/javascript" src="index.js"></script>
 		<style>
-			.uploadBox {
+			.file-upload {
 				width: 100%;
 				height: auto;
 				padding: 20px;
@@ -19,29 +19,24 @@
 				margin-bottom: 20px;
 			}
 			
-			.uploadBox .progress {
+			.file-upload .progress {
 				/*display: none;*/
 				width: auto;
 				margin-bottom: 0;
-			}
-			li{
-				list-style: none;
-			}
-			.uploadList>ul>li{
-				min-width: 1025px;
 			}
 			
 		</style>
 	</head>
 
 	<body>
-		<div class="uploadBox">
-			<button type="button" class="btn btn-default btn-upload" onclick="upload()">点击上传文件</button>
-			<div class="progress">
+		<div class="file-upload">
+			<button type="button" id="fileUp" class="btn btn-info btn-upload">点击上传文件</button>
+			<input type="file" id="fileUp-display" name="file" multiple="multiple" style="opacity: 0;height: 0;" />
+			<!--<div class="progress" id='total-progress'>
 				<div class="progress-bar" role="progressbar" aria-valuenow="100" aria-valuemin="0" aria-valuemax="100" style="width: 0%;">
 					0%
 				</div>
-			</div>
+			</div>-->
 			
 			<!--文件列表-->
 			<div class="uploadList">				
@@ -61,35 +56,37 @@
 				</tbody>
 			</table>
 			</div>
-			
-			<div id='preview'>
-				<p>文件预览</p>
-				<div></div>
-			</div>
-			<button type="button" id="toUpload" class="btn btn-default btn-upload">全部提交</button>
-			<button type="button" id="allRemove" class="btn btn-default btn-upload" onclick="allRemove()">全部移除</button>
+
+			<button type="button" id="uploadTotal" class="btn btn-default btn-upload">全部提交</button>
+			<button type="button" id="allRemove" class="btn btn-default btn-upload" onclick="$.removeFiles()">全部移除</button>
 		</div>
 		<!--文件列表-->
-		
-		<!--模态框-->
-		<div class="modal fade" id="uploadTip" tabindex="-1" role="dialog" aria-labelledby="gridSystemModalLabel">
-			<div class="modal-dialog" role="document" style="width: 300px;">
-				<div class="modal-content">
-					<div class="modal-header">
-						<button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
-						<h4 class="modal-title" id="gridSystemModalLabel">提示</h4>
-					</div>
-					<div class="modal-body">
-						<span>dadas</span>
-					</div>
-					<div class="modal-footer">
-						<!--<button type="button" class="btn btn-default" data-dismiss="modal">关闭</button>-->
-						<button type="button" class="btn btn-primary"  data-dismiss="modal" id="modalYes">确认</button>
-					</div>
-				</div>
-			</div>
-		</div>
-		<!--模态框-->
+
 	</body>
 
 </html>
+
+<script>
+	//上传按钮		
+	$("#fileUp").click(function() {
+		$("#fileUp-display").click();
+	})
+
+	$("#fileUp-display").change(function() {
+		$.previewFile(this,{
+			maxSize:10
+		});
+	});
+	
+	$("#uploadTotal").click(function() {
+		$.upLoad_file(this, {
+			type: 'all', //all:全部上传；one:单个上传
+			url: 'upload.php', //上传地址
+			callback: function(data) {
+//					console.log(JSON.parse(data).image);
+					//JSON.parse(data).image : 储存上传成功的图片地址
+
+				} //上传成功后的回调函数
+		})
+	})
+</script>

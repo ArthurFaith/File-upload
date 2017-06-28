@@ -1,305 +1,308 @@
-var fileList = [];
-var getModal = function(content) {
-	var html = [];
-	html.push('<div class="modal fade" id="uploadTip" tabindex="-1" role="dialog" aria-labelledby="gridSystemModalLabel">');
-	html.push('<div class="modal-dialog" role="document" style="width: 300px;">');
-	html.push('<div class="modal-content">');
-	html.push('<div class="modal-header">')
-	html.push('<button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>')
-	html.push('<h4 class="modal-title" id="gridSystemModalLabel">提示</h4>')
-	html.push('</div>')
-	html.push('<div class="modal-body">')
-	html.push('<span>' + content + '</span>')
-	html.push('</div>')
-	html.push('<div class="modal-footer">')
-	html.push('<button type="button" class="btn btn-primary"  data-dismiss="modal">确认</button>')
-	html.push('</div></div></div></div>')
-
-	return html.join('');
-}
-var modalTip = function(option) {
-	if(!$('body #uploadTip')[0]) {
-		var modal = getHtml(option.content);
-		$('body').append(modal);
+;(function ($, window, document, undefined) {
+	//弹窗插件
+	var Popup = function(options){
+		this.defaults = {
+			title: '提示',
+			content: '',
+			ok: function() {}
+		},
+		this.options = $.extend({}, this.defaults, options);
 	}
-	$('#uploadTip').modal('show');
-}
-
-var getFileList = function(option) {
-	var html = [];
-	html.push('<tr>');
-	html.push('<td><strong>' + option.name + '</strong></td>');
-	html.push('<td nowrap>' + option.size + '</td>');
-	html.push('<td>' +
-		'<div class="progress progress-sm m-b-none m-t-xs" style="display:none">' +
-		'<div class="progress-bar bg-info" role="progressbar">' + option.pre + '</div>' +
-		'</div>' +
-		'</td>');
-	html.push('<td class="text-center"></td>');
-	html.push('<td nowrap><button id="onlyUpload" type="button" class="btn btn-default btn-xs" onclick="oneUpload(this)">上传</button>');
-	//	html.push('<button type="button" class="btn btn-default btn-xs">预览</button>');
-	html.push('<button type="button" class="btn btn-default btn-xs" onclick="oneDelete(this)">移除</button></td></tr>');
-	return html.join('')
-}
-
-var showModel = function(option) {
-	/*title:标题
-	 * content:内容
-	 * ok:确认点击回调
-	 */
-	$('#uploadTip .modal-content .modal-title').text(option.title);
-	$('#uploadTip .modal-body span').text(option.content);
-	$('#uploadTip').modal('show');
-	$("#uploadTip #modalYes").on('click', function() {
-		if(option.ok instanceof Function) {
-			option.ok();
-		}
-	})
-}
-var upload = function() {
-	myUpload({
-		'url': 'upload.php',
-		'maxSize': 10,
-		'beforeSend': function(file, prvbox) {
-			//						$('.uploadBox .progress .progress-bar').css({'width':0})
-			//						previewImage(file,prvbox);
+	
+	Popup.prototype = {
+		getModal:function(){
+			var html = [];
+			var data = this.options;
+			html.push('<div class="modal fade" id="uploadTip" tabindex="-1" role="dialog" aria-labelledby="gridSystemModalLabel">');
+			html.push('<div class="modal-dialog" role="document" style="width: 300px;">');
+			html.push('<div class="modal-content">');
+			html.push('<div class="modal-header">')
+			html.push('<button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>')
+			html.push('<h4 class="modal-title" id="gridSystemModalLabel">'+data.title+'</h4>')
+			html.push('</div>')
+			html.push('<div class="modal-body">')
+			html.push('<span>' + data.content + '</span>')
+			html.push('</div>')
+			html.push('<div class="modal-footer">')
+			html.push('<a class="btn btn-primary" data-dismiss="modal" id="modalYes">确认</a>')
+			html.push('</div></div></div></div>')
+		
+			return html.join('');
 		},
-		'callback': function(res) {
-
+		addModal:function(){
+			var that = this;
+			$("body #uploadTip").remove();
+			var htmlDom = this.getModal();
+			$("body").append(htmlDom);
+			$('body #uploadTip').modal('show');
+			$("#modalYes").on('click',function(){
+				that.options.ok();
+			})
+		}
+		
+	}
+	
+	$.showModal = function(options){
+		var modal = new Popup(options);
+		modal.addModal();
+	}
+	
+	//文件加载
+	window.fileList = [];//文件列表
+	var FileLoad = function($ele,options){
+		this.$ele = $ele;
+		this.defaults = {
+			maxSize:'',//最大文件大小
+		};
+		this.options = $.extend({}, this.defaults, options);
+	}
+	
+	FileLoad.prototype = {
+		addFile : function(obj){
+			var html = [];
+			html.push('<tr>');
+			html.push('<td><strong>' + obj.name + '</strong></td>');
+			html.push('<td nowrap>' + obj.size + '</td>');
+			html.push('<td>' +
+				'<div class="progress">'+
+				'<div class="progress-bar" role="progressbar" aria-valuenow="100" aria-valuemin="0" aria-valuemax="100" style="width: 0%;">'+
+				'</div></div>'+
+				'</td>');
+			html.push('<td class="text-center"></td>');
+			html.push('<td nowrap><button type="button" class="btn btn-default btn-xs onlyUpload">上传</button>');
+			//	html.push('<button type="button" class="btn btn-default btn-xs">预览</button>');
+			html.push('<button type="button" class="btn btn-default btn-xs removeFile">移除</button></td></tr>');
+			return html.join('')
 		},
-		'uploading': function(pre) {
-			var progress = pre + '%';
-			$('.uploadBox .progress').show();
-			$('.uploadBox .progress .progress-bar').css({ 'width': 0 })
-			$('.uploadBox .progress .progress-bar').css({ 'width': progress });
-			$('.uploadBox .progress .progress-bar').text(progress);
-		}
-	})
-}
-//上传
-var myUpload = function(option) {
-	/*option:{
-		 'url':'',//上传文件的服务器地址
-		 'maxSize':'',//限制大小，单位M
-		 'beforeSend':function(){},//上传前回调
-		 'callback':function(){},//上传成功回调
-		 'uploading':function(){}//上传进度监控
-	}*/
-	var prvbox = document.getElementById('preview'); //图片预览框
-	var fd = new FormData(), //表单对象
-		xhr = new XMLHttpRequest(), //ajax对象
-		input; //file控件
-	input = document.createElement('input');
-	input.setAttribute('id', 'myUploadInput');
-	input.setAttribute('type', 'file');
-	input.setAttribute('name', 'file');
-	input.setAttribute('multiple', true);
-	document.body.appendChild(input);
-	input.style.display = 'none'; //隐藏
-	input.click(); //模拟点击
-	fileType = ['doc', 'docx', 'xls', 'xlsx', 'pdf', 'jpg', 'png', 'ppt', 'pptx', 'txt', 'zip']; //文件类型限制
-	//监听onchange
-	input.onchange = function() {
-		if(!input.value) { return; }
-		//文件类型限制
-		var type = input.value.split('.').pop();
-		if(fileType.indexOf(type.toLocaleLowerCase()) == -1) {
-			showModel({
-				title: '提示',
-				content: '暂不支持该类型的文件，请重新选择!',
-				ok: function() {}
-			});
-			return;
-		}
-		//限制文件大小
-		if(option.maxSize && input.files[0].size > option.maxSize * 1024 * 1024) {
-			showModel({
-				title: '提示',
-				content: '请上传小于' + option.maxSize + 'M的文件',
-				ok: function() {}
-			});
-			return;
-		}
-		//上传文件之前
-		if(option.beforeSend instanceof Function) {
-			if(option.beforeSend(input, prvbox) === false) {
-				return false;
+		viewFile : function(){			
+			var fileType = ['doc', 'docx', 'xls', 'xlsx', 'pdf', 'jpg', 'png', 'ppt', 'pptx', 'txt', 'zip'], //文件类型限制
+			//文件类型限制
+				type = this.$ele.value.split('.').pop(),
+				that = this;
+			if(fileType.indexOf(type.toLocaleLowerCase()) == -1) {
+				$.showModal({
+					title: '提示',
+					content: '暂不支持该类型的文件，请重新选择!',
+					ok: function() {}
+				});
+				return;
 			}
+			//限制文件大小
+			if(this.options.maxSize && this.$ele.files[0].size > this.options.maxSize * 1024 * 1024) {
+				$.showModal({
+					title: '提示',
+					content: '请上传小于' + this.options.maxSize + 'M的文件',
+					ok: function() {}
+				});
+				return;
+			}
+			
+			if(window.fileList.length>8)
+			{
+				$.showModal({
+					title: '提示',
+					content: '一次不能传超过9个附件！',
+					ok: function() {}
+				});
+				return;
+			}
+			
+			for(var j = 0; j < that.$ele.files.length; j++) {
+				window.fileList.push(that.$ele.files[j]);
+				var oneList = that.addFile({
+					name: that.$ele.files[j].name,
+					size: $.sizeExplain(that.$ele.files[j].size)
+				});
+				renderHtml(oneList);
+			}
+			
+			
+			function renderHtml(oneList){
+				$(".uploadList table tbody").append(oneList);
+				//上传事件
+				$('.onlyUpload').unbind('click');
+				$(".onlyUpload").on('click',function(){
+					$.upLoad_file(this,{
+						type:'one',//all:全部上传；one:单个上传
+						url:'upload.php',
+						callback:function(data){},
+						uploading:function(){}
+					})
+				})
+				//删除事件
+				$(".removeFile").unbind('click')
+				$(".removeFile").on('click',function(){
+					$.removeFiles(this);
+				})
+			}
+			
 		}
-
-		//添加到文件列表
-		var uploadFileData = input.files;
-		//索引
-		//			        var fileIndex = fileList.length-1;
-		for(var i = 0; i < input.files.length; i++) {
-			//			        	fileIndex ++;
-			fileList.push(input.files[i]);
-			var oneList = getFileList({
-				name: input.files[i].name,
-				//			        		fileIndex:fileIndex,
-				size: sizeExplain(input.files[i].size)
-			});
-			console.log(input.files[i].File)
-			$(".uploadList table tbody").append(oneList);
-		}
-
-		console.log(uploadFileData);
-		console.log(fileList);
-
 	}
-	//事件解绑
-	$('#toUpload').unbind('click');
-	$('#toUpload').on('click', function() {
-		fd.append('file', fileList); //文件存入表单对象
-		xhr.open('post', option.url); //建立ajax请求
-		//监听ajax状态
-		xhr.onreadystatechange = function() {
-			if(xhr.status == 200) {
-				if(xhr.readyState == 4) {
-					//上传成功回调
-					if(option.callback instanceof Function) {
-						showModel({
-							title: '提示',
-							content: '上传成功！',
-							ok: function() {}
-						});
-						option.callback(xhr.responseText);
+	
+	//文件大小转换
+	$.sizeExplain = function(size) {
+		if(size<1024){
+			return parseFloat(size) + 'B';
+		}
+		if(size>1023&&size<1024*1024){
+			var a = size / 1024;
+			return parseFloat(a.toFixed(2)) + 'KB';
+		}
+		if(size>1024*1023){
+			var b = size / (1024*1024);
+			return parseFloat(b.toFixed(2)) + 'M';
+		}
+		
+	}
+
+	$.previewFile = function($ele){
+		var filePre = new FileLoad($ele,{
+			maxSize:10,//最大文件大小
+		})
+		filePre.viewFile();
+	}
+	
+	
+	//文件上传
+	var UploadFile = function($ele,options){
+		this.$ele = $ele,
+		this.defaults={
+			type:'all',//all:全部上传；one:单个上传
+			url:'',
+			callback:function(data){},
+			uploading:function(){}
+		},
+		this.options = $.extend({}, this.defaults, options);	
+	}
+	
+	UploadFile.prototype = {
+		uploadFile: function(){
+			if(!window.fileList[0])
+			{
+				$.showModal({
+					title: '提示',
+					content: '请选择文件！',
+					ok: function() {}
+				});
+				return;
+			}
+			var fd = new FormData(), //表单对象
+				xhr = new XMLHttpRequest(), //ajax对象
+				that = this,
+				fileData = [],
+				index = $(".uploadList table tbody tr").index($(that.$ele).parent().parent());
+				
+			if(that.options.type == 'all'){
+				fileData = window.fileList;
+				that.options.uploading = function(pre){
+					var progress = pre + '%';
+					$(".uploadList .progress").show();
+					$(".uploadList .progress-bar").css({ 'width': 0 })
+					$(".uploadList .progress-bar").css({ 'width': progress });
+					$(".uploadList .progress-bar").text(progress);
+				}
+			}
+			else if(that.options.type == 'one'){				
+				fileData.push(window.fileList[index]);
+				that.options.uploading = function(pre){
+					var progress = pre + '%';					
+					$(that.$ele).parent().parent().find('.progress').show();
+					$(that.$ele).parent().parent().find('.progress-bar').css({ 'width': 0 })
+					$(that.$ele).parent().parent().find('.progress-bar').css({ 'width': progress });
+					$(that.$ele).parent().parent().find('.progress-bar').text(progress);
+				}
+			}
+			for(var n=0;n<fileData.length;n++)
+			{					
+				fd.append('file', fileData[n]);
+				console.log(fd.get('file'))//文件存入表单对象
+				xhr.open('post', that.options.url); //建立ajax请求
+				//监听ajax状态
+				
+				xhr.onreadystatechange = function() {
+					if(xhr.readyState == 4) {
+						if(xhr.status == 200) {
+							//上传成功回调
+							if(that.options.callback instanceof Function) {
+								$.showModal({
+									title: '提示',
+									content: '上传成功！',
+									ok: function() {}
+								});
+								
+								window.fileList.splice(index, 1);
+								console.log(window.fileList);
+								that.options.callback(xhr.responseText);
+							}
+						}
+						else {
+							console.log(xhr.status)
+							$.showModal({
+								title: '提示',
+								content: '上传失败，请重新上传！',
+								ok: function() {}
+							});
+						}
+					} 
+					
+				}
+				//进度条
+				xhr.upload.onprogress = function(event) {
+					var pre = Math.floor(100 * event.loaded / event.total);
+					
+					if(that.options.uploading instanceof Function) {
+						that.options.uploading(pre);
 					}
+					
 				}
-			} else {
-				showModel({
-					title: '提示',
-					content: '上传失败，请重新上传！',
-					ok: function() {}
-				});
+				xhr.send(fd);
 			}
+			
 		}
-		//进度条
-		xhr.upload.onprogress = function(event) {
-			var pre = Math.floor(100 * event.loaded / event.total);
-			if(option.uploading instanceof Function) {
-				option.uploading(pre);
-			}
-		}
-		xhr.send(fd);
-	})
-}
-
-//图片预览
-function previewImage(file, prvbox) {
-	/* file：file控件 
-	 * prvid: 图片预览容器 
-	 */
-	var tip = ""; // 设定提示信息 
-	var filters = {
-		"jpeg": "/9j/4",
-		"gif": "R0lGOD",
-		"png": "iVBORw"
 	}
-	prvbox.innerHTML = "";
-	if(window.FileReader) { // html5方案 
-		for(var i = 0, f; f = file.files[i]; i++) {
-			var fr = new FileReader();
-			fr.onload = function(e) {
-				var src = e.target.result;
-				if(!validateImg(src)) {
-					showModel({
-						title: '提示',
-						content: '文件格式不正确！',
-						ok: function() {}
-					});
-				} else {
-					showPrvImg(src);
-				}
-			}
-			fr.readAsDataURL(f);
-		}
-	} else { // 降级处理
+	
+	$.upLoad_file = function($ele,options){
+		var objUpload = new UploadFile($ele,options);
+		objUpload.uploadFile();		
+	}
 
-		if(!/\.jpg$|\.png$|\.gif$/i.test(file.value)) {
-			showModel({
-				title: '提示',
-				content: '文件格式不正确！',
-				ok: function() {}
-			});
-		} else {
-			showPrvImg(file.value);
+	//移除
+	$.removeFiles = function($ele){
+		if(arguments[0])
+		{
+			var index = $(".uploadList table tbody tr").index($($ele).parent().parent());
+			window.fileList.splice(index, 1);
+			$(".uploadList table tbody tr").eq(index).remove();
+		}
+		else
+		{
+			window.fileList.splice(0, window.fileList.length);
+			$(".uploadList table tbody").empty();
 		}
 	}
 
-	function validateImg(data) {
-		var pos = data.indexOf(",") + 1;
-		for(var e in filters) {
-			if(data.indexOf(filters[e]) === pos) {
-				return e;
-			}
-		}
-		return null;
-	}
 
-	function showPrvImg(src) {
-		var img = document.createElement("img");
-		img.src = src;
-		prvbox.appendChild(img);
-	}
 
-}
 
-//文件大小转换
-var sizeExplain = function(size) {
-	var a = size / (1024 * 1024);
-	return parseFloat(a.toFixed(3)) + 'M';
-}
-//单个上传
-var oneUpload = function(that) {
-	var fileData = [];
-	var fileIndex = $(".uploadList table tbody tr").index($(that).parent().parent());
-	fileData.push(fileList[fileIndex]);
-	var fd = new FormData(), //表单对象
-		xhr = new XMLHttpRequest(); //ajax对象
-	fd.append('file', fileData); //文件存入表单对象
-	xhr.open('post', 'upload.php'); //建立ajax请求
-	//监听ajax状态
-	xhr.onreadystatechange = function() {
-		if(xhr.status == 200) {
-			if(xhr.readyState == 4) {
-				showModel({
-					title: '提示',
-					content: '上传成功！',
-					ok: function() {}
-				});
-			}
-		} else {
-			showModel({
-				title: '提示',
-				content: '上传失败，请重新上传！',
-				ok: function() {}
-			});
-		}
-	}
-	//进度条
-	xhr.upload.onprogress = function(event) {
-		var pre = Math.floor(100 * event.loaded / event.total);
-		var progress = pre + '%';
-		$(that).parent().parent().find('.progress').show();
-		$(that).parent().parent().find('.progress-bar').css({ 'width': 0 })
-		$(that).parent().parent().find('.progress-bar').css({ 'width': progress });
-		$(that).parent().parent().find('.progress-bar').text(progress);
-	}
-	xhr.send(fd);
-}
-//单个删除
-var oneDelete = function(that) {
-	//console.log(that.dataset.upload);
-	//索引
-	var fileIndex = $(".uploadList table tbody tr").index($(that).parent().parent());
-	fileList.splice(fileIndex, 1);
-	$(".uploadList table tbody tr").eq(fileIndex).remove();
-	console.log(fileList);
-}
 
-//全部移除
-var allRemove = function() {
-	fileList.splice(0, fileList.length);
-	$(".uploadList table tbody").empty();
-}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+})(jQuery, window, document);
